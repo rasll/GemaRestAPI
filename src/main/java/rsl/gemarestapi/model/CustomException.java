@@ -5,77 +5,20 @@
  */
 package rsl.gemarestapi.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response;
 
 /**
  *
  * @author solofoniaina
  */
-public abstract class CustomException extends Exception implements Serializable{
-    private Status status;
-    private HashMap<String,Object> payload=new HashMap<>();
-    
-    @JsonIgnore
-    private List suppressed;
-    
-    public final Status getStatus() {
-        return status;
-    }
+public class CustomException extends AbstractCustomException {
 
-    public final void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public final HashMap<String, Object> getPayload() {
-        return payload;
-    }
-
-    public final void setPayload(HashMap<String, Object> payload) {
-        this.payload = payload;
+    public CustomException(Response.Status status, String message, List<String> exceptions) {
+        super(status,message,exceptions);
     }
     
-    public final void setExceptions(List<String> exeptions) {
-        getPayload().put("exceptions",exeptions);
-    }
-    
-    public final void addException(Exception exception) {
-        if(getPayload().get("exceptions")==null) getPayload().put("exceptions", new ArrayList<String>());
-        ((List)getPayload().get("exceptions")).add(exception.getMessage());
-    }
-    
-    public final void setMessage(String message){
-        getStatus().setMessage(message);  
-    }
-
-    @Override
-    @JsonIgnore
-    public StackTraceElement[] getStackTrace() {
-        return super.getStackTrace(); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @JsonIgnore
-    public synchronized Throwable getCause() {
-        return super.getCause(); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @JsonIgnore
-    public String getLocalizedMessage() {
-        return super.getLocalizedMessage(); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    @JsonIgnore
-    public String getMessage() {
-        return super.getMessage(); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    
-    
+    public CustomException(Response.Status status, String message, Exception exception) {
+        super(status, message, exception);
+    }  
 }
