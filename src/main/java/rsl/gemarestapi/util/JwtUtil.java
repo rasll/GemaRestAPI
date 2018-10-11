@@ -24,11 +24,12 @@ import rsl.gemarestapi.entity.User;
  * @author solofoniaina
  */
 public class JwtUtil {
+    
     // Generate an RSA key pair, which will be used for signing and verification of the JWT, wrapped in a JWK
     private static RsaJsonWebKey rsaJsonWebKey;
     private static String ISSUER, AUDIENCE;
     private static int EXPIRATION_TIME;
-    
+
     static{
         try {
             rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048);
@@ -43,7 +44,10 @@ public class JwtUtil {
         EXPIRATION_TIME=60*24;//1 jour
     }
     
-    public static String generateToken(User user){
+    public static String generateToken(String subject){
+        return generateToken(subject, null);
+    }
+    public static String generateToken(String subject, Map<String, Object> htClaims){
         // Create the Claims, which will be the content of the JWT
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(ISSUER);  // who creates the token and signs it
@@ -52,8 +56,62 @@ public class JwtUtil {
         claims.setGeneratedJwtId(); // a unique identifier for the token
         claims.setIssuedAtToNow();  // when the token was issued/created (now)
         claims.setNotBeforeMinutesInThePast(2); // time before which the token is not yet valid (2 minutes ago)
-        claims.setSubject("Customer "+user.getUser()+"'s JWT"); // the subject/principal is whom the token is about
-        claims.setClaim("ref-customer",user.getIdcatuser()); // additional claims/attributes about the subject can be added
+        subject=(subject==null)?"":subject;
+        claims.setSubject(subject); // the subject/principal is whom the token is about
+        //claims.setClaim("ref-customer",customer.getReference()); // additional claims/attributes about the subject can be added
+            //List<String> groups = Arrays.asList("group-one", "other-group", "group-three");
+            //claims.setStringListClaim("groups", groups); // multi-valued claims work too and will end up as a JSON array
+        if(htClaims!=null){
+            for(Map.Entry<String,Object> entry:htClaims.entrySet()){
+                claims.setClaim(entry.getKey(),entry.getValue());
+            }
+        }
+
+        // A JWT is a JWS and/or a JWE with JSON claims as the payload.
+        // In this example it is a JWS so we create a JsonWebSignature object.
+        JsonWebSignature jws = new JsonWebSignature();
+
+        // The payload of the JWS is JSON content of the JWT Claims
+        jws.setPayload(claims.toJson());
+
+        // The JWT is signed using the private key
+        jws.setKey(rsaJsonWebKey.getPrivateKey());
+
+        // Set the Key ID (kid) header because it's just the polite thing to do.
+        // We only have one key in this example but a using a Key ID helps
+        // facilitate a smooth key rollover process
+        jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+
+        // Set the signature algorithm on the JWT/JWS that will integrity protect the claims
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+
+        // Sign the JWS and produce the compact serialization or the complete JWT/JWS
+        // representation, which is a string consisting of three dot ('.') separated
+        // base64url-encoded parts in the form Header.Payload.Signature
+        // If you wanted to encrypt it, you can simply set this jwt as the payload
+        // of a JsonWebEncryption object and set the cty (Content Type) header to "jwt".
+        String jwt=null;
+        try {
+            jwt = jws.getCompactSerialization();
+        } catch (JoseException ex) {
+            Logger.getLogger(JwtUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        //System.out.println("Generated JWT: "+jwt);
+        //System.out.println("Generated JWT: "+jwt);
+        
+        return jwt;
+    }
+    public static String generateToken(User customer){
+        // Create the Claims, which will be the content of the JWT
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer(ISSUER);  // who creates the token and signs it
+        claims.setAudience(AUDIENCE); // to whom the token is intended to be sent
+        claims.setExpirationTimeMinutesInTheFuture(EXPIRATION_TIME); // time when the token will expire (10 minutes from now)
+        claims.setGeneratedJwtId(); // a unique identifier for the token
+        claims.setIssuedAtToNow();  // when the token was issued/created (now)
+        claims.setNotBeforeMinutesInThePast(2); // time before which the token is not yet valid (2 minutes ago)
+        claims.setSubject("Customer "+customer.getUser()+"'s JWT"); // the subject/principal is whom the token is about
+        claims.setClaim("ref-customer",customer.getIduser()); // additional claims/attributes about the subject can be added
             //List<String> groups = Arrays.asList("group-one", "other-group", "group-three");
             //claims.setStringListClaim("groups", groups); // multi-valued claims work too and will end up as a JSON array
        
@@ -91,7 +149,6 @@ public class JwtUtil {
         
         return jwt;
     }
-    
     public static Map<String, Object> readToken(String token) throws InvalidJwtException{
         // Use JwtConsumerBuilder to construct an appropriate JwtConsumer, which will
         // be used to validate and process the JWT.
@@ -125,4 +182,5 @@ public class JwtUtil {
             throw e;
         }
     }
+    
 }
