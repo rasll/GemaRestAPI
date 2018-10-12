@@ -46,19 +46,19 @@ public class Authentification {
         
         //Verification de l'objet request
         try {
-            WsUtil.verifyRequest(request, "login","password");
+            WsUtil.verifyRequest(request, "user","password");
         } catch (Exception ex) {
             throw new BadRequestException(null, ex);
         }
         //Si request correct
         HashMap<String,Object> payload=request.getPayload();
-        String login=(String)payload.get("login");
+        String login=(String)payload.get("user");
         String password=(String)payload.get("password");
         
         //Get user from DB
-        Query query = mEntityManager.createQuery("FROM TPmsUser WHERE login =:login AND password =:password")
+        Query query = mEntityManager.createQuery("FROM User WHERE user =:user AND password =:password")
                 .setParameter("login", login)
-                .setParameter("password", WsUtil.toSha256(password));//
+                .setParameter("password", WsUtil.toSha256(password));
         try{
             user = (User) query.getSingleResult();
         }catch(Exception e){

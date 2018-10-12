@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
  */
 public class Constants {
     
+    public static final String REST_API_URL="http://localhost:8082/gema-rest-api/ws";
     public static final String REST_API_VERSION="1.0.0";
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
