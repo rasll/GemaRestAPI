@@ -7,9 +7,14 @@ package rsl.gemarestapi.entity;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityManager;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -20,6 +25,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.transaction.UserTransaction;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -30,14 +36,8 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @Entity
 @Table(name = "user")
-@XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "User.findAll", query = "SELECT u FROM User u"),
-    @NamedQuery(name = "User.findByIduser", query = "SELECT u FROM User u WHERE u.iduser = :iduser"),
-    @NamedQuery(name = "User.findByUser", query = "SELECT u FROM User u WHERE u.user = :user"),
-    @NamedQuery(name = "User.findByPassword", query = "SELECT u FROM User u WHERE u.password = :password"),
-    @NamedQuery(name = "User.findByCreatedate", query = "SELECT u FROM User u WHERE u.createdate = :createdate"),
-    @NamedQuery(name = "User.findByStatus", query = "SELECT u FROM User u WHERE u.status = :status")})
+    @NamedQuery(name = "User.findFinduser", query = "SELECT u FROM User u WHERE login = :idt AND password = :mdp")})
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -49,8 +49,8 @@ public class User implements Serializable {
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 50)
-    @Column(name = "USER")
-    private String user;
+    @Column(name = "LOGIN")
+    private String login;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 50)
@@ -74,9 +74,9 @@ public class User implements Serializable {
         this.iduser = iduser;
     }
 
-    public User(Integer iduser, String user, String password, boolean status) {
+    public User(Integer iduser, String login, String password, boolean status) {
         this.iduser = iduser;
-        this.user = user;
+        this.login = login;
         this.password = password;
         this.status = status;
     }
@@ -89,12 +89,12 @@ public class User implements Serializable {
         this.iduser = iduser;
     }
 
-    public String getUser() {
-        return user;
+    public String getLogin() {
+        return login;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public String getPassword() {
@@ -152,6 +152,30 @@ public class User implements Serializable {
     @Override
     public String toString() {
         return "rsl.gemarestapi.entity.User[ iduser=" + iduser + " ]";
+    }
+
+    public void persist(Object object) {
+        /* Add this to the deployment descriptor of this module (e.g. web.xml, ejb-jar.xml):
+         * <persistence-context-ref>
+         * <persistence-context-ref-name>persistence/LogicalName</persistence-context-ref-name>
+         * <persistence-unit-name>rsl_GemaRestAPI_war_1.0PU</persistence-unit-name>
+         * </persistence-context-ref>
+         * <resource-ref>
+         * <res-ref-name>UserTransaction</res-ref-name>
+         * <res-type>javax.transaction.UserTransaction</res-type>
+         * <res-auth>Container</res-auth>
+         * </resource-ref> */
+        try {
+            Context ctx = new InitialContext();
+            UserTransaction utx = (UserTransaction) ctx.lookup("java:comp/env/UserTransaction");
+            utx.begin();
+            EntityManager em = (EntityManager) ctx.lookup("java:comp/env/persistence/LogicalName");
+            em.persist(object);
+            utx.commit();
+        } catch (Exception e) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "exception caught", e);
+            throw new RuntimeException(e);
+        }
     }
     
 }

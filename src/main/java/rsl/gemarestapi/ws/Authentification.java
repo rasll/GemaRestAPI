@@ -30,7 +30,7 @@ import rsl.gemarestapi.util.WsUtil;
  * @author solofoniaina
  */
 @Stateless
-@Path("signin")
+@Path("/signin")
 public class Authentification {
     @PersistenceContext
     EntityManager mEntityManager;
@@ -39,28 +39,31 @@ public class Authentification {
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonResponse doLogin (JsonRequest request) throws BadRequestException{
+    public JsonResponse doLogin (JsonRequest rq) throws BadRequestException{
         
-        JsonResponse response = new JsonResponse();
+        JsonResponse res = new JsonResponse();
         User user = null;
         
         //Verification de l'objet request
         try {
-            WsUtil.verifyRequest(request, "user","password");
-        } catch (Exception ex) {
-            throw new BadRequestException(null, ex);
+            WsUtil.verifyRequest(rq,"login","password");
+        } catch (Exception e) {
+            throw new BadRequestException(null, e);
         }
+        
         //Si request correct
-        HashMap<String,Object> payload=request.getPayload();
-        String login=(String)payload.get("user");
-        String password=(String)payload.get("password");
+        HashMap<String,Object> payload=rq.getPayload();
+        String login=(String)payload.get("login");
+        String password=(String)payload.get("password");        
         
         //Get user from DB
-        Query query = mEntityManager.createQuery("FROM User WHERE user =:user AND password =:password")
+        Query query = mEntityManager.createQuery("SELECT u FROM User u WHERE u.login = :login AND u.password = :password")
                 .setParameter("login", login)
                 .setParameter("password", WsUtil.toSha256(password));
+        
         try{
             user = (User) query.getSingleResult();
+           
         }catch(Exception e){
             throw new BadRequestException("Login/password incorrect.", e);
         }
@@ -68,12 +71,12 @@ public class Authentification {
         //create token
         Map tokenPayload=new Hashtable<>();
         tokenPayload.put("user-id", user.getIduser());
-        String token=JwtUtil.generateToken("Token of user "+user.getUser(), tokenPayload);
-        response.getPayload().put("token", token);
+        String token=JwtUtil.generateToken("Token of user "+user.getLogin(), tokenPayload);
+        res.getPayload().put("token", token);
         
         //Return user info
-        response.getPayload().put("user-info", user);
+        res.getPayload().put("user-info", user);
         
-        return response;
+        return res;
     }
 }
