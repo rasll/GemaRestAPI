@@ -110,7 +110,7 @@ public class JwtUtil {
         claims.setGeneratedJwtId(); // a unique identifier for the token
         claims.setIssuedAtToNow();  // when the token was issued/created (now)
         claims.setNotBeforeMinutesInThePast(2); // time before which the token is not yet valid (2 minutes ago)
-        claims.setSubject("Customer "+customer.getUser()+"'s JWT"); // the subject/principal is whom the token is about
+        claims.setSubject("Customer "+customer.getLogin()+"'s JWT"); // the subject/principal is whom the token is about
         claims.setClaim("ref-customer",customer.getIduser()); // additional claims/attributes about the subject can be added
             //List<String> groups = Arrays.asList("group-one", "other-group", "group-three");
             //claims.setStringListClaim("groups", groups); // multi-valued claims work too and will end up as a JSON array
